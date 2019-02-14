@@ -1,6 +1,4 @@
-#ifdef COLORFIGHT_H
-#define COLORFIGHT_H
-
+#include <string>
 #include <iostream>
 using namespace std;
 
@@ -48,12 +46,13 @@ class LinkedList {
 		struct Node {
 			User *data;
 			Node *next;
-		}
+		};
 		Node *head;
 };
 
 class Game {
 	public:
+		Game();
 		bool data;
 		string token;
 		string name;
@@ -64,7 +63,7 @@ class Game {
 		float planStartTime;
 		float lastUpdate;
 		LinkedList *users;
-		Cell cells[ 900 ];
+		Cell *cells;
 		int cellNum;
 		int baseNum;
 		int goldCellNum;
@@ -108,6 +107,19 @@ class Game {
 		int energyCellNumT;
 		float energyT;
 		float goldT;
+
+		struct Response {
+			char *text;
+			size_t size;
+		};
+
+		void init_response( Response *r );
+		size_t response_handler( void *ptr, size_t size, size_t nmemb, Response *r );
+		char *post_json( const char *url, const char *data );
 };
+
+#ifdef COLORFIGHT_H
+#define COLORFIGHT_H
+
 
 #endif
