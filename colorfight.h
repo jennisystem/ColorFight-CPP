@@ -76,6 +76,7 @@ class Game {
 		int width;
 		int height;
 
+		void Refresh();
 		bool JoinGame( string name );
 	private:
 		string refreshData;

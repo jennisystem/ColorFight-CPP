@@ -9,13 +9,8 @@ using namespace std;
 
 const string URL = "http://troycolorfight.herokuapp.com/";
 
-struct Response {
-	char *text;
-	size_t size;
-};
-
 LinkedList::LinkedList() {
-
+	this->head = NULL;
 }
 
 User::User() {
@@ -47,27 +42,15 @@ Game::Game() {
 	this->height = 30;
 }
 
-void init_response( Response &r ) {
-	r.size = 0;
-	r.text = ( char * ) malloc( 1 );
-	r.text[ 0 ] = '\0';
-}
-
-size_t response_handler( void *ptr, size_t size, size_t nmemb, Response *r ) {
-	size_t respSize = size * nmemb;
-	r->text = ( char * ) realloc( r->text, r->size + respSize + 1 );
-	if( r->text == NULL ) exit( EXIT_FAILURE );
-	memcpy( r->text + r->size, ptr, respSize );
-	r->text[ r->size + respSize ] = '\0';
-	r->size += respSize;
-	return respSize;
+size_t response_handler( void *ptr, size_t size, size_t nmemb, string &s ) {
+	s.append( ( char * ) ptr );
+	return size * nmemb;
 }
 
 string PostData( string sub, string data ) {
 	CURL *curl;
 	CURLcode res;
-	Response r;
-	init_response( r );
+	string str;
 	curl = curl_easy_init();
 	if( curl ) {
 		struct curl_slist *chunk = NULL;
@@ -76,14 +59,13 @@ string PostData( string sub, string data ) {
 		curl_easy_setopt( curl, CURLOPT_POSTFIELDS, data.c_str() );
 		curl_easy_setopt( curl, CURLOPT_HTTPHEADER, chunk );
 		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, &response_handler );
-		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &r );
+		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &str );
 		res = curl_easy_perform( curl );
 		if( res != CURLE_OK ) {
 			fprintf( stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror( res ) );
 		}
 		curl_easy_cleanup( curl );
 	}
-	string str( r.text );
 	return str;
 }
 
@@ -118,4 +100,9 @@ bool Game::JoinGame( string name ) {
 		tokenRead.close();
 	}
 	return true;
+}
+
+void Game::Refresh() {
+	this->refreshData = PostData( "getgameinfo", "{\"protocol\":2}" );
+	cout << this->refreshData << endl;
 }
