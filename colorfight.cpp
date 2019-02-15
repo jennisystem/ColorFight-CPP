@@ -77,32 +77,51 @@ string &trim( string &str ) {
 }
 
 bool Game::JoinGame( string name ) {
+	int pos1, pos2;
 	name = trim( name );
 	string responseText;
 	ifstream tokenRead( "token" );
-	if( tokenRead.fail() ) {
-		responseText = PostData( "joingame", "{\"name\":\"" + name + "\"}" );
-		int pos1 = responseText.find( "\"token\":\"" ) + 9;
-		int pos2 = responseText.find( "\"", pos1 );
-		this->token = responseText.substr( pos1, pos2 - pos1 );
-		ofstream tokenWrite( "token" );
-		if( tokenWrite.is_open() ) {
-			tokenWrite << token;
-			tokenWrite.close();
-		}
-	} else {
+	if( !tokenRead.fail() ) {
 		string tokenStr = "";
 		string line;
 		while( getline( tokenRead, line ) ) {
 			tokenStr += trim( line );
 		}
-		this->token = tokenStr;
 		tokenRead.close();
+		responseText = PostData( "checktoken", "{\"token\":\"" + tokenStr + "\"}"  );
+		pos1 = responseText.find( "\"name\":\"" ) + 8;
+		pos2 = responseText.find( "\"", pos1 );
+		if( responseText.substr( pos1, pos2 - pos1 ) == name ) {
+			this->name = name;
+			this->token = tokenStr;
+			pos1 = responseText.find( "\"uid\":" ) + 6;
+			pos2 = responseText.find( ",", pos1 );
+			if( pos2 == -1 ) {
+				pos2 = responseText.find( "}", pos1 );
+			}
+			this->uid = atoi( responseText.substr( pos1, pos2 - pos1 ).c_str() );
+			return true;
+		}
 	}
+	responseText = PostData( "joingame", "{\"name\":\"" + name + "\"}" );
+	pos1 = responseText.find( "\"token\":\"" ) + 9;
+	pos2 = responseText.find( "\"", pos1 );
+	this->token = responseText.substr( pos1, pos2 - pos1 );
+	this->name = name;
+	ofstream tokenWrite( "token" );
+	if( tokenWrite.is_open() ) {
+		tokenWrite << token;
+		tokenWrite.close();
+	}
+	pos1 = responseText.find( "\"uid\":" ) + 6;
+	pos2 = responseText.find( ",", pos1 );
+	if( pos2 == -1 ) {
+		pos2 = responseText.find( "}", pos1 );
+	}
+	this->uid = atoi( responseText.substr( pos1, pos2 - pos1 ).c_str() );
 	return true;
 }
 
 void Game::Refresh() {
 	this->refreshData = PostData( "getgameinfo", "{\"protocol\":2}" );
-	cout << this->refreshData << endl;
 }
