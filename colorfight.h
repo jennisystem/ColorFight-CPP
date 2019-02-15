@@ -53,6 +53,7 @@ class LinkedList {
 class Game {
 	public:
 		Game();
+
 		bool data;
 		string token;
 		string name;
@@ -74,6 +75,8 @@ class Game {
 		float gold;
 		int width;
 		int height;
+
+		bool JoinGame( string name );
 	private:
 		string refreshData;
 		int refreshIndex;
@@ -108,14 +111,9 @@ class Game {
 		float energyT;
 		float goldT;
 
-		struct Response {
-			char *text;
-			size_t size;
-		};
-
-		void init_response( Response *r );
-		size_t response_handler( void *ptr, size_t size, size_t nmemb, Response *r );
-		char *post_json( const char *url, const char *data );
+		//void init_response( Response &r );
+		//size_t response_handler( void *ptr, size_t size, size_t nmemb, Response *r );
+		//string PostData( string sub, const string data );
 };
 
 #ifdef COLORFIGHT_H

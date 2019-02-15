@@ -1,10 +1,18 @@
 #include "colorfight.h"
-
 #include <string>
+#include <cstring>
 #include <iostream>
+#include <fstream>
 #include <curl/curl.h>
 
 using namespace std;
+
+const string URL = "http://troycolorfight.herokuapp.com/";
+
+struct Response {
+	char *text;
+	size_t size;
+};
 
 LinkedList::LinkedList() {
 
@@ -39,13 +47,13 @@ Game::Game() {
 	this->height = 30;
 }
 
-void Game::init_response( Response *r ) {
-	r->size = 0;
-	r->text = ( char * ) malloc( 1 );
-	r->text[ 0 ] = '\0';
+void init_response( Response &r ) {
+	r.size = 0;
+	r.text = ( char * ) malloc( 1 );
+	r.text[ 0 ] = '\0';
 }
 
-size_t Game::response_handler( void *ptr, size_t size, size_t nmemb, Response *r ) {
+size_t response_handler( void *ptr, size_t size, size_t nmemb, Response *r ) {
 	size_t respSize = size * nmemb;
 	r->text = ( char * ) realloc( r->text, r->size + respSize + 1 );
 	if( r->text == NULL ) exit( EXIT_FAILURE );
@@ -55,19 +63,19 @@ size_t Game::response_handler( void *ptr, size_t size, size_t nmemb, Response *r
 	return respSize;
 }
 
-char *Game::post_json( const char *url, const char *data ) {
+string PostData( string sub, string data ) {
 	CURL *curl;
 	CURLcode res;
 	Response r;
-	init_response( &r );
+	init_response( r );
 	curl = curl_easy_init();
 	if( curl ) {
 		struct curl_slist *chunk = NULL;
 		chunk = curl_slist_append( chunk, "Content-Type: application/json" );
-		curl_easy_setopt( curl, CURLOPT_URL, url );
-		curl_easy_setopt( curl, CURLOPT_POSTFIELDS, data );
+		curl_easy_setopt( curl, CURLOPT_URL, ( URL + sub ).c_str() );
+		curl_easy_setopt( curl, CURLOPT_POSTFIELDS, data.c_str() );
 		curl_easy_setopt( curl, CURLOPT_HTTPHEADER, chunk );
-		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, &Game::response_handler );
+		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, &response_handler );
 		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &r );
 		res = curl_easy_perform( curl );
 		if( res != CURLE_OK ) {
@@ -75,5 +83,39 @@ char *Game::post_json( const char *url, const char *data ) {
 		}
 		curl_easy_cleanup( curl );
 	}
-	return r.text;
+	string str( r.text );
+	return str;
+}
+
+string &trim( string &str ) {
+	string chars( "\t\n\v\f\r " );
+	str.erase( 0, str.find_first_not_of( chars ) );
+	str.erase( str.find_last_not_of( chars ) + 1 );
+	return str;
+}
+
+bool Game::JoinGame( string name ) {
+	name = trim( name );
+	string responseText;
+	ifstream tokenRead( "token" );
+	if( tokenRead.fail() ) {
+		responseText = PostData( "joingame", "{\"name\":\"" + name + "\"}" );
+		int pos1 = responseText.find( "\"token\":\"" ) + 9;
+		int pos2 = responseText.find( "\"", pos1 );
+		this->token = responseText.substr( pos1, pos2 - pos1 );
+		ofstream tokenWrite( "token" );
+		if( tokenWrite.is_open() ) {
+			tokenWrite << token;
+			tokenWrite.close();
+		}
+	} else {
+		string tokenStr = "";
+		string line;
+		while( getline( tokenRead, line ) ) {
+			tokenStr += trim( line );
+		}
+		this->token = tokenStr;
+		tokenRead.close();
+	}
+	return true;
 }

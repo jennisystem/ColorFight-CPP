@@ -6,7 +6,9 @@
 using namespace std;
 
 int main( int argc, char **argv ) {
-	Game &g = *( new Game() );
-	cout << g.width << " " << g.height << endl;
+	Game g;
+	if( g.JoinGame( "AI++" ) ) {
+		cout << g.token << endl;
+	}
 	return -1;
 }
